@@ -20,3 +20,15 @@ https://www.cnblogs.com/succeed/p/6204438.html
 ./configure --prefix=/etc/squid --enable-arp-acl --enable-linux-netfilter --enable-linux-tproxy --enable-async-io=100 --enable-err-language="Japanese" --enable-underscore --enable-poll --enable-gnuregex     
 
 
+tomcat
+7.0.52->7.0.107
+https://blog.csdn.net/qq_26819733/article/details/84110648
+https://www.cnblogs.com/jian0110/p/10517576.html
+多实例部署
+https://www.cnblogs.com/jian0110/p/10517576.html
+升级方法
+https://www.cnblogs.com/markleilei/p/13666375.html
+https://www.cnblogs.com/lihouyong-10003/p/13042125.html
+http://www.mamicode.com/info-detail-2535585.html
+
+http://18.179.199.193:8081/
