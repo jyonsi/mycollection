@@ -1,0 +1,135 @@
+https://www.cnblogs.com/zhuhongbao/archive/2013/06/03/3115545.html
+
+
+
+2.2g 7.1g
+下载gcc squid
+
+mkdir /root/tep
+cd /root/tep
+
+wget http://ftp.tsukuba.wide.ad.jp/software/gcc/releases/gcc-4.9.4/gcc-4.9.4.tar.gz
+wget http://www.squid-cache.org/Versions/v4/squid-4.13.tar.gz
+
+wget ftp://gcc.gnu.org/pub/gcc/infrastructure/gmp-4.3.2.tar.bz2
+wget ftp://gcc.gnu.org/pub/gcc/infrastructure/mpfr-2.4.2.tar.bz2 
+wget ftp://gcc.gnu.org/pub/gcc/infrastructure/mpc-0.8.1.tar.gz
+isl-0.16.tar.bz2。
+https://gcc.gnu.org/pub/gcc/infrastructure/
+
+
+
+
+https://cloud.tencent.com/developer/article/1176706
+gcc-c++
+https://centos.pkgs.org/6/centos-x86_64/gcc-c++-4.4.7-23.el6.x86_64.rpm.html
+https://centos.pkgs.org/6/centos-i386/gcc-c++-4.4.7-23.el6.i686.rpm.html
+
+下载
+yum install -y yum-plugin-downloadonly
+yum install --downloadonly --downloaddir=/root/temp/teppackages/ gcc-c++
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+yum install --downloadonly --downloaddir=/root/tep/teppackages/libatomic_package libatomic
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+
+强行安装g++
+rpm -ivh libstdc++-4.4.7-23.el6.x86_64.rpm
+
+rpm -ivh --force --nodeps libstdc++-devel-4.4.7-23.el6.x86_64.rpm
+ rpm -ivh --force --nodeps gcc-c++-4.4.7-23.el6.x86_64.rpm
+
+
+
+yum install --downloadonly --downloaddir=glibc-headers
+rpm -ivh tzdata-2020d-1.el6.noarch.rpm
+rpm -ivh --force --nodeps glibc-common-2.12-1.212.el6_10.3.x86_64.rpm
+rpm -ivh glibc-2.12-1.212.el6_10.3.x86_64.rpm
+rpm -ivh --force --nodeps glibc-headers-2.12-1.212.el6_10.3.x86_64.rpm
+rpm -ivh --force --nodeps glibc-devel-2.12-1.212.el6_10.3.x86_64.rpm
+
+
+
+
+
+
+
+
+
+
+
+gcc
+
+./configure --prefix=/usr/local/gcc-4.9 --enable-checking=release --enable-languages=c,c++ --disable-multilib
+
+https://blog.csdn.net/weixin_33907511/article/details/90150643
+
+# 导入环境变量export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib
+# 不然configure: error: cannot compute suffix of object files: cannot compil
+make
+make install
+
+alternatives --install /usr/bin/gcc gcc /usr/local/gcc-4.9/bin/gcc 1
+alternatives --install /usr/bin/gcc gcc /usr/bin/gcc4.4.7 2
+alternatives --install /usr/bin/g++ g++ /usr/bin/g++_4,4 2
+alternatives --install /usr/bin/g++ g++ /usr/local/gcc-4.9/bin/g++4.9 1
+
+
+cd /usr/local/gcc-4.9/lib64/
+ll
+cp libstdc++.so.6.0.20 /usr/lib64/  
+cd /usr/lib64
+ls -l | grep libstdc++
+ln -snf /usr/lib64/libstdc++.so.6.0.20 libstdc++.so.6
+strings /usr/lib64/libstdc++.so.6 | grep GLIBCXX　
+
+
+mkdir /root/tep
+tar -xzvf binutils-2.35.tar.gz
+cd binutils-2.35
+./configure  --prefix=/usr
+make 
+make install  
+as --version
+objdump -v
+ld -v
+
+
+
+cd /root/tep/squid-4.13/
+./configure --prefix=/etc/squid --sysconfdir=/etc/squid --enable-arp-acl --enable-linux-netfilter --enable-linux-tproxy --enable-async-io=100 --enable-err-language="Japanese" --enable-underscore --enable-poll --enable-gnuregex     
+
+https://www.cnblogs.com/mafy/p/13380332.html
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+rpm -ivh libatomic-8.2.1-1.3.1.el6_10.x86_64.rpm
+yum whatprovides /usr/lib64/libatomic.so.1.0.0
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+make
+make install
+
+
+
+
+ln -s /etc/lsquid/sbin/* /usr/local/sbin/
+# useradd -M -s /sbin/nologin squid
+chown -R squid.squid /etc/squid/var/
+
+squid設定確認
+vim /etc/squid.conf
++++++++++++++++++++++++++++++++++++++
+cache_effective_user squid               #squidユーザー追加    
+cache_effective_group squid            #squidグループ追加
++++++++++++++++++++++++++++++++++++++
+
+
+squid -k parse  　　　　　　　#構文チェック
+squid -z            　　　　　　　#キャッシュイニシャライズ
+
+
+squid                　　　　　　　#サービス起動
+netstat -ntap | grep squid　　＃サービス確認　　
+ 
+
+
+
