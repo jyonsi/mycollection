@@ -131,5 +131,30 @@ squid                　　　　　　　#サービス起動
 netstat -ntap | grep squid　　＃サービス確認　　
  
 
-
-
++++++++++++++++++++++++++++++++++++++
+./configure
+–exec_prefix=/usr/local/squid
+–bindir=/usr/sbin
+–libexecdir=/usr/lib/squid
+–sysconfdir=/etc/squid
+–enable-poll
+–enable-snmp
+–enable-removal-policies=”heap,lru”
+–enable-storeio=”aufs,coss,diskd,null,ufs”
+–enable-ssl
+–with-openssl=/usr/kerberos
+–enable-delay-pools
+–enable-linux-netfilter
+–with-pthreads –enable-auth=”basic”
+–with-winbind-auth-challenge
+–enable-useragent-log
+–enable-referer-log
+–disable-dependency-tracking
+–enable-cachemgr-hostname=localhost
+–disable-ident-lookups
+–enable-truncate
+–enable-underscores
+–datadir=/usr/share/squid
+–enable-basic-auth-helpers=”NCSA”
+–enable-err-language=”Simplify_Chinese”
+–enable-default-err-language=”Simplify_Chinese”
