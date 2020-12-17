@@ -17,7 +17,7 @@ wget ftp://gcc.gnu.org/pub/gcc/infrastructure/mpc-0.8.1.tar.gz
 isl-0.16.tar.bz2。
 https://gcc.gnu.org/pub/gcc/infrastructure/
 
-
+wget http://ftp.jaist.ac.jp/pub/GNU/binutils/
 
 
 https://cloud.tencent.com/developer/article/1176706
