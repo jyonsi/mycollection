@@ -1,0 +1,24 @@
+#!/bin/bash
+
+folder_name="/app/ysztest/data/"
+elementsCount=0
+filesCount=0
+echo "$folder_name"
+function funCount()
+{
+	for file in `ls $folder_name`
+	do
+		declare -i elements
+		elements=`jq .[].friends data/json.json | jq '. | length'`
+		let elementsCount=$elementsCount+$elements
+		let filesCount=$filesCount+1
+	done	
+
+
+}
+
+
+
+funCount
+echo "$elementsCount"
+echo "file number is $filesCount"
