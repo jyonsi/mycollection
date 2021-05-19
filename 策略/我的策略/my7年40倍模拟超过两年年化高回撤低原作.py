@@ -5,8 +5,6 @@
 from __future__ import division
 from jqlib.technical_analysis import *
 from jqdata import *
-from datetime import date
-from scipy import stats
 
 def initialize(context):
     set_option('use_real_price', True)
@@ -65,23 +63,16 @@ def gogogo(context):
         g.nohold = False
 
 def get_bull_bear_signal_minute(context): #牛熊判断
-
-    curr_date = context.current_dt.date()+datetime.timedelta(days=-1)
-    maslope20, maangle20 = get_trend('000300.XSHG', 10, '1d', curr_date, 10, 'ma')
-    maslope60, maangle60 = get_trend('000300.XSHG', 20, '1d', curr_date, 20, 'ma')
-    #maslope120, maangle120 = get_trend('000300.XSHG', 10, '1d','ma',number=120)
-
-    emaslope20, emaangle20 = get_trend('000300.XSHG', 10, '1d', curr_date, 10, 'ema')
-    emaslope60, emaangle60 = get_trend('000300.XSHG', 20, '1d', curr_date, 20, 'ema')
-    #emaslope120, emaangle120 = get_trend('000300.XSHG', 10, '1d','ema',number=120)
-
+    #curr_date = context.current_dt.date()+datetime.timedelta(days=-1)
+    # maslope20, maangle20 = get_trend('000300.XSHG', 10, '1d', curr_date, 10, 'ma')
+    nowindex = get_close_price(g.MA[0], 1, '1m')
+    MAold = (attribute_history(g.MA[0], g.MA[1] - 1, '1d', 'close', True)['close'].sum() + nowindex) / g.MA[1]
     if g.isbull:
-        if (maangle20 <0 and emaangle20 <0) and (maangle60 <0 and emaangle60 <0):
+        if nowindex * (1 + g.threshold) <= MAold:
             g.isbull = False
     else:
-        if (maangle20 >0 and emaangle20 >0) and (maangle60 >0 and emaangle60 >0):
+        if nowindex > MAold * (1 + g.threshold):
             g.isbull = True
-
 def get_trend(security,count,unit,curr_date,number,datatype='ma'):
     
     

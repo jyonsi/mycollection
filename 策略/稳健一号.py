@@ -51,10 +51,14 @@ def before_market_open(context):
     if not g.num%2:
 
         #获取满足条件的股票列表
-        temp_list = get_stock_list(context)
-        log.info('================满足条件的股票有%s只================'%len(temp_list))
+        check_out_lists = get_stock_list(context)
+        log.info('================满足条件的股票有%s只================'%len(check_out_lists))
+        check_out_lists = filter_st_stock(check_out_lists)
+        check_out_lists = filter_limitup_stock(context, check_out_lists)
+        check_out_lists = filter_paused_stock(check_out_lists)
+        check_out_lists = filter_kc_stock(check_out_lists)
         #按市值进行排序
-        g.buy_list = get_check_stocks_sort(context,temp_list)
+        g.buy_list = get_check_stocks_sort(context,check_out_lists)
         
     g.num+=1
 
@@ -277,3 +281,51 @@ def stop_loss(context):
             #     if not result == None:
             #         log.info('5天大盘跌0.13卖出：',security,current_data[security].name,earn)
 	    
+
+
+
+
+
+
+# 过滤科创
+def filter_kc_stock(stock_list):
+
+    return [stock for stock in stock_list if not (stock.startswith('300') or stock.startswith('688'))]
+            
+# 过滤停牌股票
+def filter_paused_stock(stock_list):
+    current_data = get_current_data()
+    return [stock for stock in stock_list if not current_data[stock].paused]
+
+
+# 过滤ST及其他具有退市标签的股票
+def filter_st_stock(stock_list):
+    current_data = get_current_data()
+    return [
+        stock for stock in stock_list if not current_data[stock].is_st and 'ST'
+        not in current_data[stock].name and '*' not in current_data[stock].name
+        and '退' not in current_data[stock].name
+    ]
+
+
+# 过滤涨停\跌停的股票
+def filter_limitup_stock(context, stock_list):
+    last_prices = history(1,
+                          unit='1m',
+                          field='close',
+                          security_list=stock_list)
+    current_data = get_current_data()
+
+    # 已存在于持仓的股票即使涨停也不过滤，避免此股票再次可买，但因被过滤而导致选择别的股票
+    return [
+        stock for stock in stock_list
+        if stock in list(context.portfolio.positions.keys())
+        or last_prices[stock][-1] <= current_data[stock].high_limit
+        or last_prices[stock][-1] >= current_data[stock].low_limit
+    ]
+
+    return [
+        stock for stock in stock_list
+        if stock in list(context.portfolio.positions.keys())
+        or last_prices[stock][-1] > current_data[stock].low_limit
+    ]

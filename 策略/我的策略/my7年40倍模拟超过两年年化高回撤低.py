@@ -70,18 +70,18 @@ def get_stock_list(context):
     stock_list = list(get_all_securities(date=check_date).index)
 
     # pb符合要求的股票，按照流通市值升序排列，取前1000名
-    # q = query(
-    #     valuation.code
-    # ).filter(
-    #     valuation.code.in_(stock_list),
-    #     valuation.pb_ratio.between(g.pb_min, g.pb_max)
-    # ).order_by(
-    #     valuation.circulating_market_cap.asc()
-    # ).limit(
-    #     1000
-    # )
-    # df = get_fundamentals(q).dropna()
-    # stock_list = list(df['code'])
+    q = query(
+        valuation.code
+    ).filter(
+        valuation.code.in_(stock_list),
+        valuation.pb_ratio.between(g.pb_min, g.pb_max)
+    ).order_by(
+        valuation.circulating_market_cap.asc()
+    ).limit(
+        1000
+    )
+    df = get_fundamentals(q).dropna()
+    stock_list = list(df['code'])
 
     # 过滤创业板、ST、停牌、当日涨停、次新股、昨日涨幅过高
     curr_data = get_current_data()
@@ -170,7 +170,7 @@ def get_trend(security,count,unit,curr_date,number,datatype='ma'):
     return (round(rs.slope,2),angle)
 
 def get_stock_rank_m_m():
-        # 以开盘前初选结果为基础，继续精选
+    # 以开盘前初选结果为基础，继续精选
     stock_list = g.chosen_stock_list
 
     stock_name_list = [ get_security_info(stock).display_name for stock in stock_list]
@@ -185,17 +185,17 @@ def get_stock_rank_m_m():
 
 
     # valuation.circulating_market_cap, valuation.market_cap
-    # q = query(
-    #     valuation.code, valuation.circulating_market_cap, valuation.market_cap
-    # ).filter(
-    #     valuation.code.in_(stock_list)
-    # ).order_by(
-    #     valuation.circulating_market_cap.asc()  # 流通市值排序
-    # ).limit(
-    #     100  # 流通市值最小的100只
-    # )
-    # df = get_fundamentals(q).set_index('code')
-    # stock_list = list(df.index)
+    q = query(
+        valuation.code, valuation.circulating_market_cap, valuation.market_cap
+    ).filter(
+        valuation.code.in_(stock_list)
+    ).order_by(
+        valuation.circulating_market_cap.asc()  # 流通市值排序
+    ).limit(
+        100  # 流通市值最小的100只
+    )
+    df = get_fundamentals(q).set_index('code')
+    stock_list = list(df.index)
 
     # 过去“5日”成交量之和
     s_volume5d = history(1200, '1m', 'volume', stock_list).sum()  # 过去1分钟，往回追朔1200分钟，即5天

@@ -34,12 +34,15 @@ def initialize(context):
     g.security_universe_index = "000300.XSHG"
     g.buy_stock_count = 5
 
+    g.sold_stock = {} # 近期卖出的股票及卖出天数
+    g.buyagain = 5 # 再次买入的间隔时间
+
     g.risk_control = RiskControl(g.base)
 
     ### 股票相关设定 ###
     # 股票类每笔交易时的手续费是：买入时佣金万分之三，卖出时佣金万分之三加千分之一印花税, 每笔交易佣金最低扣5块钱
     set_order_cost(OrderCost(close_tax=0.001,
-                             open_commission=0.0003,	
+                             open_commission=0.0003,
                              close_commission=0.0003,
                              min_commission=5),
                    type='stock')
@@ -56,6 +59,13 @@ def initialize(context):
 ## 开盘前运行函数     
 def before_market_open(context):
 
+    tmp_sold_stock = {}
+    for stock in g.sold_stock:
+        if g.sold_stock[stock] + 1 < g.buyagain:
+            tmp_sold_stock[stock] = g.sold_stock[stock] + 1
+    #
+    g.sold_stock = tmp_sold_stock
+
     #获取满足条件的股票列表
     g.stock_list = get_stock_list(context)
     check_out_lists = g.stock_list
@@ -64,7 +74,8 @@ def before_market_open(context):
     check_out_lists = filter_limitup_stock(context, check_out_lists)
     check_out_lists = filter_paused_stock(check_out_lists)
     check_out_lists = filter_kc_stock(check_out_lists)
-    check_out_lists = filter_blacklist_stock(context,check_out_lists)
+    check_out_lists = filter_blacklist_stock(context, check_out_lists)
+    chekc_out_lists = [stock for stock in check_out_lists if stock not in g.sold_stock]
     # 取需要的只数
     g.stock_list = get_check_stocks_sort(context,check_out_lists)
     
@@ -77,7 +88,6 @@ def trade(context):
 
     log.info('__'*15)
 
-
 # 交易
 def adjust_position(context, buy_stocks):
     # 交易函数 - 出场
@@ -86,9 +96,11 @@ def adjust_position(context, buy_stocks):
     hold_stock = list(context.portfolio.positions.keys())
     for stock in hold_stock:
         #卖出不在买入列表中的股票
-        if stock not in buy_stocks:
-            order_target_value(stock,0)   
-            log.info('卖出：',current_data[stock].name,stock)
+        if stock not in buy_stocks:           
+            _order = order_target_value(stock,0) # 可能会因停牌或跌停失败
+            if _order is not None and _order.filled > 0:
+                g.sold_stock[stock] = 0
+                log.info('卖出：',current_data[stock].name,stock)
     #买入
     if check_for_benchmark(context):
         Num = g.buy_stock_count - len(context.portfolio.positions)
@@ -109,6 +121,7 @@ def adjust_position(context, buy_stocks):
                         if not result == None:
                             log.info("买入：%s %s" %
                                      (current_data[stock].name, stock))
+
 #止盈止损
 def stop_loss(context):
     current_data = get_current_data()
@@ -122,16 +135,19 @@ def stop_loss(context):
             e_5 = (close_data['close'][-1]-close_data['close'][0])/close_data['close'][0]
             earn = (current_data[security].last_price-context.portfolio.positions[security].avg_cost)/context.portfolio.positions[security].avg_cost
             if earn>.35:
-                result = order_target(security, 0)  
-                if not result == None:
+                _order = order_target_value(security,0) # 
+                if _order is not None and _order.filled > 0:
+                    g.sold_stock[security] = 0
                     log.info('止赢：%s %s %.2f'%(current_data[security].name,security,earn))
             if e_5<-0.1:
-                result = order_target(security, 0)  
-                if not result == None:
+                _order = order_target_value(security,0) # 
+                if _order is not None and _order.filled > 0:
+                    g.sold_stock[security] = 0
                     log.info('回撤：%s %s %.2f'%(current_data[security].name,security,earn))
             if earn<-0.10 :
-                result = order_target(security, 0) 
-                if not result == None:
+                _order = order_target_value(security,0) # 
+                if _order is not None and _order.filled > 0:
+                    g.sold_stock[security] = 0
                     log.info('个股止损0.10 卖出：',security,current_data[security].name,earn)
 
 # 过滤科创
@@ -144,7 +160,6 @@ def filter_paused_stock(stock_list):
     current_data = get_current_data()
     return [stock for stock in stock_list if not current_data[stock].paused]
 
-
 # 过滤ST及其他具有退市标签的股票
 def filter_st_stock(stock_list):
     current_data = get_current_data()
@@ -153,7 +168,6 @@ def filter_st_stock(stock_list):
         not in current_data[stock].name and '*' not in current_data[stock].name
         and '退' not in current_data[stock].name
     ]
-
 
 # 过滤涨停\跌停的股票
 def filter_limitup_stock(context, stock_list):
@@ -177,12 +191,10 @@ def filter_limitup_stock(context, stock_list):
         or last_prices[stock][-1] > current_data[stock].low_limit
     ]
 
-
 #自定义函数
 def check_for_benchmark(context):
 
     return g.risk_control.check_for_benchmark(context)
-
 
 #============================================================================================
 class RiskControlStatus(Enum):
@@ -312,7 +324,6 @@ def get_stock_list(context):
     l3 = set(l3)
 
     #4.近3年自由现金流量均为正值。（cash_flow.net_operate_cash_flow - cash_flow.net_invest_cash_flow）
-    # #3年经营现金流净额>投资现金流净额1000000
     y = context.current_dt.year
     l4 = {}
     for i in range(1,4):
@@ -354,38 +365,7 @@ def get_stock_list(context):
             l6 = l6 & set(l_temp)
     l6 = set(l6)
     
-    #7.获取最近一季度PEG，从小到大排序，PEG<1.2,
-    PEG_list = []
-    # 得到一个dataframe：index为股票代码，data为相应的PEG值
-    temp_set = l2 & l3 & l4 & l5 & l6
-    df_PEG = get_PEG(context, list(temp_set))
-    # 将股票按PEG降序排列，返回daraframe类型
-    df_sort_PEG = df_PEG.sort_values('peg', ascending=False)
-    log.info('PGE列表：'+str(df_sort_PEG))
-    # 将存储有序股票代码index转换成list并取前g.num_stocks个为待买入的股票，返回list
-    for i in range(len(df_sort_PEG.index)):
-        
-        #获取上市时间
-        start_date =get_security_info(df_sort_PEG.index[i]).start_date
-        end_date=context.previous_date
-        
-        log.info("开始时间：" +str(start_date))
-        log.info("结束时间：" +str(end_date))
-        
-        #获取PE历史分位
-        df = get_PE_HistoryPercentile(df_sort_PEG.index[i],start_date,end_date)
-        log.info("PE历史分位：" +str(df))
-        
-        
-        if df_sort_PEG.ix[i,'peg'] < 1.2:
-            # if df<75:
-            #     PEG_list.append(df_sort_PEG.index[i])
-            PEG_list.append(df_sort_PEG.index[i])
-    l7 = set(PEG_list)
-    log.info('最近一季度PEG<1.2：'+str(len(temp_list)))
-
-    return list(l7)
-    # return list(l2 & l3 & l4 & l5 & l6)
+    return list(l2 &l3 &l4&l5&l6)
     
 #去极值（分位数法）  
 def winsorize(se):
@@ -524,62 +504,6 @@ def get_blacklist():
         ]
     return blacklist 
 
-#获取PE历史分位
-def get_PE_HistoryPercentile(code, start_date, end_date):
-    pelist=[]
-    
-    #获取历史日期
-    time_list = pd.date_range(start_date, end_date,freq='M')         # 频率为月
-    #遍历日期获取历史PE数据
-    for i, d in enumerate(time_list): 
-        num=_get_stock_valuation_date([code], d)
-        if num>0:
-            pelist.append(num)
-        
-    #获取当前PE
-    pe=_get_stock_valuation_date([code],end_date)
-    log.info("当前PE" +str(pe))
-    
-    #pe为负，亏损，实际是很大，因此转化为大的正值且需对应大小关系
-    pelist.append(pe)
-    pelist.sort()
-    cnpe=pelist.index(pe)
-    cppe=int((1.0*cnpe)/(1.0*len(pelist))*100)
-    log.info("当前pe: ",pe,"；有",cppe,"%  的交易日的估值比当前低。")
-    
-    return cppe
 
-#PE数据
-def _get_stock_valuation_date(stock, date):
-    q = query(valuation).filter(valuation.code.in_(stock))
-    df = get_fundamentals(q, date)
-    if len(df)>0:
-        return df['pe_ratio'][0]
-    else:
-        return -1
-    
-# 计算股票的PEG值
-# 输入：context(见API)；stock_list为list类型，表示股票池
-# 输出：df_PEG为dataframe: index为股票代码，data为相应的PEG值
-def get_PEG(context, stock_list): 
-    # 查询股票池里股票的市盈率，净利润增长率
-    q_PE_G = query(
-        valuation.code,
-        valuation.pe_ratio,
-        indicator.inc_net_profit_year_on_year,
-        # indicator.day
-        ).filter(valuation.code.in_(stock_list))
-    
-    df_PE_G = get_fundamentals(q_PE_G)
 
-    # 筛选出成长股：删除市盈率或净利润增长率为负值的股票
-    df_Growth_PE_G = pd.DataFrame(df_PE_G[(df_PE_G.pe_ratio > 0) & (df_PE_G.pe_ratio < 88)\
-                & (df_PE_G.inc_net_profit_year_on_year > 10) & (df_PE_G.inc_net_profit_year_on_year < 200)])
 
-    # 去除无效数据，以及使用code来索引
-    df_Growth_PE_G.dropna()
-    df_Growth_PE_G.set_index(['code'], 1, inplace=True)
-    
-    # PEG值 = 市盈率TTM(PE) / 收益增长率(G)
-    df_Growth_PE_G['peg'] = df_Growth_PE_G['pe_ratio'] / df_Growth_PE_G['inc_net_profit_year_on_year']
-    return pd.DataFrame(df_Growth_PE_G['peg'])  
