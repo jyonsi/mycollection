@@ -1,0 +1,43 @@
+1, mk dir
+2, git init .
+3,
+  git config --global user.name "yangyonsi"
+  git config --global user.email "Shunzhi.Yang.bp@jp.nttdata.com"
+  git config --global --list
+  git config --system --list
+  git config --local --list
+
+4,                     
+ git remote add origin https://jyonsi:token@github.com/xxx/xxxx.git
+ git clone https://jyonsi:token@github.com/xxxxx/xxxx.git
+5, git fetch
+
+6. git switch  xxx
+
+  git pull
+  git add
+  git commit
+  git checkout -b xxx
+  git switich -c
+  git push
+
+
+ develop => feature/1.1
+ 
+ git checkout -b feature/1.1
+
+ git add 
+ 
+ git status
+ 
+ git commit -m "メッセージ記入ルールある"
+ git 
+ 
+ git merge develop
+ git revoke
+ git reset 
+ 
+ git log
+ git diff 
+
+
