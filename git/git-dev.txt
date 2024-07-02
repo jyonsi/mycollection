@@ -30,14 +30,35 @@
  
  git status
  
- git commit -m "���b�Z�[�W�L�����[������"
- git 
+ git commit -m "メッセージ記入ルールある"
+ git push origin 
  
  git merge develop
  git revoke
  git reset 
- 
+
  git log
  git diff 
+
+
+
+
+
+# resolve conflict
+
+# ブランチをdevelopに切り替えて
+git checkout develop
+
+# pullする（リモートの状態を反映させて最新に）(fetch + mergeでもOK)
+git pull origin develop
+
+# 作業ブランチに切り替えて
+# git checkout <作業ブランチ>
+git checkout b_branch
+
+# developをマージ
+git merge develop
+
+
 
 
